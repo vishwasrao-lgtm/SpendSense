@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\src\data_loader.py
+# hypothesis_version: 6.148.7
+
+[1000000, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%d-%m-%Y', '%d-%m-%Y %H:%M:%S', '%m/%d/%Y', '%m/%d/%Y %H:%M:%S', '.csv', '.json', 'NaN or Inf', 'UNKNOWN', 'amount', 'category', 'channel', 'device_id', 'location', 'r', 'recipient_status', 'records', 'timestamp', 'txn_id', 'user_id', 'utf-8']

@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\src\ui.py
+# hypothesis_version: 6.148.7
+
+[0.07, 1.0, 10.0, '### ⚠️ Risk Alert', '---', '1 Year', '10 Years', '5 Years', 'Budget Remaining', 'Transaction Amount', 'cancelled', 'high', 'low', 'medium', 'primary', 'proceeded', '⚪', '✅ Proceed anyway', '❌ Cancel & Save', '🔴', '🟡', '🟢']
