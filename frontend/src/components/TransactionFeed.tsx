@@ -25,11 +25,12 @@ export default function TransactionFeed({ transactions }: TransactionFeedProps) 
     return (
         <div className="space-y-1">
             {/* Header */}
-            <div className="grid grid-cols-[40px_1fr_120px_100px_140px] gap-3 px-4 py-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
+            <div className="grid grid-cols-[40px_1fr_120px_100px_100px_140px] gap-3 px-4 py-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
                 <span></span>
                 <span>Details</span>
                 <span className="text-right">Amount</span>
                 <span className="text-right">Time</span>
+                <span className="text-center">Status</span>
                 <span className="text-right">ID</span>
             </div>
             {/* Rows */}
@@ -39,7 +40,7 @@ export default function TransactionFeed({ transactions }: TransactionFeedProps) 
                     return (
                         <div
                             key={txn.txn_id}
-                            className="grid grid-cols-[40px_1fr_120px_100px_140px] gap-3 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition items-center"
+                            className="grid grid-cols-[40px_1fr_120px_100px_100px_140px] gap-3 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition items-center"
                         >
                             <span className="text-lg text-center">{style.icon}</span>
                             <div className="min-w-0">
@@ -54,6 +55,11 @@ export default function TransactionFeed({ transactions }: TransactionFeedProps) 
                             <span className="text-xs text-gray-400 font-mono text-right">
                                 {new Date(txn.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                             </span>
+                            <span className="flex justify-center">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${style.badgeClass}`}>
+                                    {style.badgeText}
+                                </span>
+                            </span>
                             <span className="text-xs text-gray-600 font-mono text-right truncate" title={txn.txn_id}>
                                 {txn.txn_id}
                             </span>
@@ -66,8 +72,11 @@ export default function TransactionFeed({ transactions }: TransactionFeedProps) 
 }
 
 function getStyle(txn: Transaction) {
-    if (!txn.is_flagged) return { icon: "🟢", amountColor: "text-emerald-400" };
-    if (txn.user_decision === "cancelled") return { icon: "🔴", amountColor: "text-red-400" };
-    if (txn.user_decision === "proceeded") return { icon: "🟡", amountColor: "text-amber-400" };
-    return { icon: "🟠", amountColor: "text-orange-400" };
+    if (!txn.is_flagged)
+        return { icon: "🟢", amountColor: "text-emerald-400", badgeText: "No Risk", badgeClass: "bg-emerald-900/50 text-emerald-400 border border-emerald-700/50" };
+    if (txn.user_decision === "cancelled")
+        return { icon: "🔴", amountColor: "text-red-400", badgeText: "Cancelled", badgeClass: "bg-red-900/50 text-red-400 border border-red-700/50" };
+    if (txn.user_decision === "proceeded")
+        return { icon: "🟡", amountColor: "text-amber-400", badgeText: "Proceeded", badgeClass: "bg-amber-900/50 text-amber-400 border border-amber-700/50" };
+    return { icon: "🟠", amountColor: "text-orange-400", badgeText: "Flagged", badgeClass: "bg-orange-900/50 text-orange-400 border border-orange-700/50" };
 }

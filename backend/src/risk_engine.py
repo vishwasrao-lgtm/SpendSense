@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 from src.detectors import BehavioralDetector, ContextualDetector
+from src.ml_detector import MLAnomalyDetector
 from src.models import InterceptLog, RiskAssessment, Transaction
 
 logger = logging.getLogger(__name__)
@@ -17,9 +18,11 @@ class RiskEngine:
         self,
         behavioral_detector: Optional[BehavioralDetector] = None,
         contextual_detector: Optional[ContextualDetector] = None,
+        ml_detector: Optional[MLAnomalyDetector] = None,
     ):
         self.behavioral_detector = behavioral_detector or BehavioralDetector()
         self.contextual_detector = contextual_detector or ContextualDetector()
+        self.ml_detector = ml_detector or MLAnomalyDetector()
 
         # In-memory stores
         self.transactions: List[Transaction] = []
@@ -42,7 +45,12 @@ class RiskEngine:
         )
         contextual_flags = self.contextual_detector.detect(transaction, recent)
 
+        # ML anomaly check
+        ml_flag = self.ml_detector.detect(transaction)
+
         all_flags = behavioral_flags + contextual_flags
+        if ml_flag:
+            all_flags.append(ml_flag)
 
         assessment = RiskAssessment(
             transaction=transaction,
@@ -90,6 +98,10 @@ class RiskEngine:
             transaction.txn_id,
             transaction.amount,
         )
+
+    def train_ml_model(self, transactions: List[Transaction]) -> None:
+        """Train the ML detector using the provided historical transactions."""
+        self.ml_detector.fit(transactions)
 
     def add_transaction(self, transaction: Transaction) -> None:
         """Store a transaction in the in-memory list."""

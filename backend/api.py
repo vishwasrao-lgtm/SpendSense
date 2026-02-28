@@ -109,8 +109,7 @@ def load_sample():
     loader = DataLoader()
     all_transactions = loader.load(sample_path)
     pending_assessment = None
-    loaded = True
-
+    risk_engine.train_ml_model(all_transactions)
     _auto_process_all()
 
     return jsonify({
@@ -142,8 +141,7 @@ def load_file():
         loader = DataLoader()
         all_transactions = loader.load(tmp_path)
         pending_assessment = None
-        loaded = True
-
+        risk_engine.train_ml_model(all_transactions)
         _auto_process_all()
 
         return jsonify({
@@ -192,7 +190,7 @@ def add_transaction():
         timestamp=ts,
         amount=amount,
         category=category,
-        recipient_status=data.get("recipient_status", "new"),
+        recipient_status=data.get("recipient_status", "existing"),
         monthly_budget_remaining=float(data.get("monthly_budget_remaining", max(2000, amount * 3))),
         device_id=data.get("device_id", "WEB_BROWSER"),
         location=data.get("location", "Web App"),
