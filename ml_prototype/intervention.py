@@ -42,8 +42,8 @@ class InterventionEngine:
             messages.append(random.choice(msgs))
             
         # Rule 2: High Spend Amount 
-        # (Assuming $200+ is considered high for a single transaction in our context)
-        if amount > 200:
+        # (Based on the 75th percentile of impulsive spends in the training 50k dataset, which is ₹470)
+        if amount > 470:
             msg = random.choice(self.high_spend_messages).format(category=category, percent=random.randint(40, 80))
             messages.append(msg)
             
