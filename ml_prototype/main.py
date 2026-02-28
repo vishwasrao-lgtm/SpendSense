@@ -39,6 +39,23 @@ def run_demo():
     engine = InterventionEngine()
     
     print("\n" + "=" * 60)
+    print(" Dashboard: Overall Spending Insights ".center(60))
+    print("=" * 60)
+    
+    # Calculate basic ML insights from the test dataset
+    categories = df_test['category'].unique()
+    total_spend = df_test['amount'].sum()
+    num_days = (df_test['timestamp'].max() - df_test['timestamp'].min()).days
+    if num_days == 0: num_days = 1 # prevent division by zero
+    
+    daily_avg = total_spend / num_days
+    weekly_avg = daily_avg * 7
+    
+    print(f"Categories Tracked : {', '.join(categories)}")
+    print(f"Average Daily Spend: ₹{daily_avg:.2f}")
+    print(f"Average Weekly Spend: ₹{weekly_avg:.2f}")
+    
+    print("\n" + "=" * 60)
     print(" Top 5 Impulsive Spending Alerts Dashboard ".center(60))
     print("=" * 60)
     
