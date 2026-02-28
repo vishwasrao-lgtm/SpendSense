@@ -1,39 +1,41 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, Database, Play, FastForward, Loader2 } from "lucide-react";
+import { Upload, Database, Plus, Loader2, DollarSign } from "lucide-react";
 import { api } from "@/lib/api";
+
+const CATEGORIES = ["groceries", "dining", "entertainment", "shopping", "bills", "travel", "utilities", "health", "food"];
 
 interface SidebarProps {
     onDataLoaded: () => void;
+    onTransactionAdded: (result: any) => void;
     loaded: boolean;
-    processed: number;
-    total: number;
-    hasPending: boolean;
-    onProcessNext: () => void;
-    onProcessAll: () => void;
-    processing: boolean;
+    totalTransactions: number;
 }
 
 export default function Sidebar({
     onDataLoaded,
+    onTransactionAdded,
     loaded,
-    processed,
-    total,
-    hasPending,
-    onProcessNext,
-    onProcessAll,
-    processing,
+    totalTransactions,
 }: SidebarProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const fileRef = useRef<HTMLInputElement>(null);
+
+    // Add transaction form state
+    const [showForm, setShowForm] = useState(false);
+    const [amount, setAmount] = useState("");
+    const [category, setCategory] = useState("shopping");
 
     const handleLoadSample = async () => {
         setLoading(true);
         setError("");
+        setSuccess("");
         try {
-            await api.loadSample();
+            const res = await api.loadSample();
+            setSuccess(res.message);
             onDataLoaded();
         } catch (e: any) {
             setError(e.message);
@@ -47,8 +49,10 @@ export default function Sidebar({
         if (!file) return;
         setLoading(true);
         setError("");
+        setSuccess("");
         try {
-            await api.uploadFile(file);
+            const res = await api.uploadFile(file);
+            setSuccess(res.message);
             onDataLoaded();
         } catch (err: any) {
             setError(err.message);
@@ -57,10 +61,34 @@ export default function Sidebar({
         }
     };
 
-    const progress = total > 0 ? (processed / total) * 100 : 0;
+    const handleAddTransaction = async () => {
+        if (!amount || parseFloat(amount) <= 0) {
+            setError("Enter a valid amount");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        setSuccess("");
+        try {
+            const result = await api.addTransaction({
+                amount: parseFloat(amount),
+                category,
+            });
+            setAmount("");
+            onTransactionAdded(result);
+            if (result.status === "clean") {
+                setSuccess("Transaction added — no risk detected");
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <aside className="w-72 bg-gray-900 border-r border-gray-800 flex flex-col p-5 gap-5 shrink-0">
+            {/* Logo */}
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-xl">
                     💡
@@ -73,82 +101,106 @@ export default function Sidebar({
 
             <div className="border-t border-gray-800" />
 
-            {!loaded ? (
-                <div className="flex flex-col gap-3">
-                    <button
-                        onClick={handleLoadSample}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
-                    >
-                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-                        Load Sample Data
-                    </button>
+            {/* Data loading */}
+            <div className="flex flex-col gap-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Load Data</p>
+                <button
+                    onClick={handleLoadSample}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
+                >
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                    Load Sample Data
+                </button>
 
-                    <div className="text-center text-xs text-gray-500">or</div>
+                <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition border border-gray-700 disabled:opacity-50"
+                >
+                    <Upload size={16} />
+                    Upload CSV / JSON
+                </button>
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".csv,.json"
+                    className="hidden"
+                    onChange={handleUpload}
+                />
+            </div>
 
-                    <button
-                        onClick={() => fileRef.current?.click()}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition border border-gray-700 disabled:opacity-50"
-                    >
-                        <Upload size={16} />
-                        Upload CSV / JSON
-                    </button>
-                    <input
-                        ref={fileRef}
-                        type="file"
-                        accept=".csv,.json"
-                        className="hidden"
-                        onChange={handleUpload}
-                    />
-                </div>
-            ) : (
-                <div className="flex flex-col gap-4">
-                    <div>
-                        <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-                            <span>Progress</span>
-                            <span>{processed}/{total}</span>
-                        </div>
-                        <div className="w-full bg-gray-800 rounded-full h-2">
-                            <div
-                                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    {processed < total && !hasPending && (
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={onProcessNext}
-                                disabled={processing}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
-                            >
-                                {processing ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-                                Process Next
-                            </button>
-                            <button
-                                onClick={onProcessAll}
-                                disabled={processing}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm font-medium transition border border-gray-700 disabled:opacity-50"
-                            >
-                                <FastForward size={14} />
-                                Auto-Process All
-                            </button>
-                        </div>
-                    )}
-
-                    {processed >= total && !hasPending && (
-                        <div className="text-center py-3 bg-emerald-900/30 border border-emerald-800 rounded-lg">
-                            <p className="text-emerald-400 text-sm font-medium">✓ All processed</p>
-                        </div>
-                    )}
+            {/* Stats */}
+            {loaded && (
+                <div className="bg-gray-800/50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-white">{totalTransactions}</p>
+                    <p className="text-xs text-gray-400">Transactions Loaded</p>
                 </div>
             )}
 
+            <div className="border-t border-gray-800" />
+
+            {/* Add Transaction */}
+            <div className="flex flex-col gap-3">
+                <button
+                    onClick={() => setShowForm(!showForm)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition"
+                >
+                    <Plus size={16} />
+                    Add Transaction
+                </button>
+
+                {showForm && (
+                    <div className="bg-gray-800/50 rounded-lg p-4 space-y-3 border border-gray-700">
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">Amount ($)</label>
+                            <div className="relative">
+                                <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">Category</label>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
+                            >
+                                {CATEGORIES.map((c) => (
+                                    <option key={c} value={c}>
+                                        {c.charAt(0).toUpperCase() + c.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <button
+                            onClick={handleAddTransaction}
+                            disabled={loading || !amount}
+                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-50"
+                        >
+                            {loading ? "Processing..." : "Submit Transaction"}
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Feedback */}
             {error && (
                 <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-400 text-xs">
                     {error}
+                </div>
+            )}
+            {success && (
+                <div className="p-3 bg-emerald-900/30 border border-emerald-800 rounded-lg text-emerald-400 text-xs">
+                    {success}
                 </div>
             )}
 

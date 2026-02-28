@@ -19,7 +19,6 @@ CORS(app)
 # ---------------------------------------------------------------------------
 risk_engine = RiskEngine()
 all_transactions = []
-processing_index = 0
 pending_assessment = None
 loaded = False
 
@@ -84,35 +83,46 @@ def get_status():
     return jsonify({
         "loaded": loaded,
         "total_transactions": len(all_transactions),
-        "processed": processing_index,
+        "processed": len(all_transactions),
         "has_pending": pending_assessment is not None,
     })
 
 
+def _auto_process_all():
+    """Process all loaded transactions through the risk engine (no user intervention)."""
+    global all_transactions
+    for txn in all_transactions:
+        assessment = risk_engine.evaluate_transaction(txn)
+        risk_engine.add_transaction(txn)
+        # Auto-process: just record that it was flagged but no decision needed
+        # Flagged status is already set on the transaction by evaluate_transaction
+
+
 @app.route("/api/load-sample", methods=["POST"])
 def load_sample():
-    """Load the built-in sample dataset."""
-    global all_transactions, processing_index, pending_assessment, loaded, risk_engine
+    """Load and auto-process the built-in sample dataset."""
+    global all_transactions, pending_assessment, loaded, risk_engine
 
     risk_engine = RiskEngine()
     sample_path = os.path.join(os.path.dirname(__file__), "data", "sample_transactions.json")
     loader = DataLoader()
     all_transactions = loader.load(sample_path)
-    processing_index = 0
     pending_assessment = None
     loaded = True
+
+    _auto_process_all()
 
     return jsonify({
         "success": True,
         "total_transactions": len(all_transactions),
-        "message": f"Loaded {len(all_transactions)} transactions from sample dataset",
+        "message": f"Loaded and processed {len(all_transactions)} transactions",
     })
 
 
 @app.route("/api/load", methods=["POST"])
 def load_file():
-    """Upload and load a CSV/JSON file."""
-    global all_transactions, processing_index, pending_assessment, loaded, risk_engine
+    """Upload, load, and auto-process a CSV/JSON file."""
+    global all_transactions, pending_assessment, loaded, risk_engine
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -130,14 +140,15 @@ def load_file():
         risk_engine = RiskEngine()
         loader = DataLoader()
         all_transactions = loader.load(tmp_path)
-        processing_index = 0
         pending_assessment = None
         loaded = True
+
+        _auto_process_all()
 
         return jsonify({
             "success": True,
             "total_transactions": len(all_transactions),
-            "message": f"Loaded {len(all_transactions)} transactions",
+            "message": f"Loaded and processed {len(all_transactions)} transactions",
         })
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -145,24 +156,42 @@ def load_file():
         os.unlink(tmp_path)
 
 
-@app.route("/api/process-next", methods=["POST"])
-def process_next():
-    """Process the next transaction and return assessment if flagged."""
-    global processing_index, pending_assessment
+@app.route("/api/add-transaction", methods=["POST"])
+def add_transaction():
+    """Add a single manual transaction, evaluate it, and return risk assessment."""
+    global pending_assessment, all_transactions
 
-    if not loaded:
-        return jsonify({"error": "No data loaded"}), 400
-    if pending_assessment is not None:
-        return jsonify({
-            "status": "pending_decision",
-            "assessment": _assessment_to_dict(pending_assessment),
-        })
-    if processing_index >= len(all_transactions):
-        return jsonify({"status": "complete", "message": "All transactions processed"})
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
 
-    txn = all_transactions[processing_index]
+    # Required fields for a manual transaction
+    try:
+        amount = float(data.get("amount", 0))
+        category = str(data.get("category", "shopping"))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid amount"}), 400
+
+    if amount <= 0:
+        return jsonify({"error": "Amount must be positive"}), 400
+
+    from src.models import Transaction
+    txn = Transaction(
+        txn_id=f"MANUAL_{len(all_transactions) + 1:05d}",
+        user_id=data.get("user_id", "USR_MANUAL"),
+        timestamp=datetime.now(),
+        amount=amount,
+        category=category,
+        recipient_status=data.get("recipient_status", "new"),
+        monthly_budget_remaining=float(data.get("monthly_budget_remaining", max(2000, amount * 3))),
+        device_id=data.get("device_id", "WEB_BROWSER"),
+        location=data.get("location", "Web App"),
+        channel="web",
+    )
+
     assessment = risk_engine.evaluate_transaction(txn)
     risk_engine.add_transaction(txn)
+    all_transactions.append(txn)
 
     if assessment.is_flagged:
         pending_assessment = assessment
@@ -171,54 +200,17 @@ def process_next():
             "assessment": _assessment_to_dict(assessment),
         })
     else:
-        processing_index += 1
         return jsonify({
             "status": "clean",
             "transaction": _txn_to_dict(txn),
-            "processed": processing_index,
-            "total": len(all_transactions),
+            "message": "Transaction added successfully",
         })
-
-
-@app.route("/api/process-all", methods=["POST"])
-def process_all():
-    """Process all remaining unflagged transactions until one is flagged or done."""
-    global processing_index, pending_assessment
-
-    if not loaded:
-        return jsonify({"error": "No data loaded"}), 400
-
-    processed_count = 0
-    while processing_index < len(all_transactions) and pending_assessment is None:
-        txn = all_transactions[processing_index]
-        assessment = risk_engine.evaluate_transaction(txn)
-        risk_engine.add_transaction(txn)
-
-        if assessment.is_flagged:
-            pending_assessment = assessment
-            return jsonify({
-                "status": "flagged",
-                "assessment": _assessment_to_dict(assessment),
-                "processed": processing_index,
-                "total": len(all_transactions),
-                "batch_processed": processed_count,
-            })
-        else:
-            processing_index += 1
-            processed_count += 1
-
-    return jsonify({
-        "status": "complete",
-        "processed": processing_index,
-        "total": len(all_transactions),
-        "batch_processed": processed_count,
-    })
 
 
 @app.route("/api/decide", methods=["POST"])
 def decide():
     """Record user decision (cancel or proceed) for the pending flagged transaction."""
-    global processing_index, pending_assessment
+    global pending_assessment
 
     if pending_assessment is None:
         return jsonify({"error": "No pending assessment"}), 400
@@ -233,14 +225,11 @@ def decide():
         pending_assessment,
         decision,
     )
-    processing_index += 1
     pending_assessment = None
 
     return jsonify({
         "success": True,
         "decision": decision,
-        "processed": processing_index,
-        "total": len(all_transactions),
     })
 
 

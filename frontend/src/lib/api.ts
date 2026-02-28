@@ -74,12 +74,12 @@ export const api = {
     return fetchJSON(`${API_BASE}/load`, { method: "POST", body: fd });
   },
 
-  processNext: () =>
-    fetchJSON(`${API_BASE}/process-next`, { method: "POST" }),
-
-  processAll: () =>
-    fetchJSON(`${API_BASE}/process-all`, { method: "POST" }),
-
+  addTransaction: (data: { amount: number; category: string; recipient_status?: string }) =>
+    fetchJSON(`${API_BASE}/add-transaction`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
   decide: (decision: "cancelled" | "proceeded") =>
     fetchJSON(`${API_BASE}/decide`, {
       method: "POST",

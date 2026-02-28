@@ -12,9 +12,7 @@ import { api, type Transaction, type Assessment, type Metrics } from "@/lib/api"
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
-  const [processed, setProcessed] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [processing, setProcessing] = useState(false);
+  const [totalTransactions, setTotalTransactions] = useState(0);
   const [pendingAssessment, setPendingAssessment] = useState<Assessment | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -22,56 +20,30 @@ export default function Home() {
 
   const refreshData = useCallback(async () => {
     try {
-      const [txData, metricsData, status] = await Promise.all([
+      const [txData, metricsData] = await Promise.all([
         api.getTransactions(),
         api.getMetrics(),
-        api.getStatus(),
       ]);
       setTransactions(txData.transactions);
       setMetrics(metricsData);
-      setProcessed(status.processed);
-      setTotal(status.total_transactions);
-      setLoaded(status.loaded);
+      setTotalTransactions(txData.total);
+      setLoaded(txData.total > 0);
     } catch { }
   }, []);
 
   const handleDataLoaded = useCallback(async () => {
-    const status = await api.getStatus();
-    setLoaded(true);
-    setTotal(status.total_transactions);
-    setProcessed(0);
-    setPendingAssessment(null);
     await refreshData();
   }, [refreshData]);
 
-  const handleProcessNext = useCallback(async () => {
-    setProcessing(true);
-    try {
-      const result = await api.processNext();
-      if (result.status === "flagged") {
-        setPendingAssessment(result.assessment);
-      } else {
-        setProcessed(result.processed);
-      }
-      await refreshData();
-    } finally {
-      setProcessing(false);
-    }
-  }, [refreshData]);
-
-  const handleProcessAll = useCallback(async () => {
-    setProcessing(true);
-    try {
-      const result = await api.processAll();
+  const handleTransactionAdded = useCallback(
+    async (result: any) => {
       if (result.status === "flagged") {
         setPendingAssessment(result.assessment);
       }
-      setProcessed(result.processed);
       await refreshData();
-    } finally {
-      setProcessing(false);
-    }
-  }, [refreshData]);
+    },
+    [refreshData]
+  );
 
   const handleDecide = useCallback(
     async (decision: "cancelled" | "proceeded") => {
@@ -82,10 +54,10 @@ export default function Home() {
     [refreshData]
   );
 
-  // poll metrics every 2s
+  // Auto-refresh on interval
   useEffect(() => {
     if (!loaded) return;
-    const interval = setInterval(refreshData, 2000);
+    const interval = setInterval(refreshData, 3000);
     return () => clearInterval(interval);
   }, [loaded, refreshData]);
 
@@ -99,51 +71,62 @@ export default function Home() {
     <div className="flex h-screen bg-gray-950 text-gray-200">
       <Sidebar
         onDataLoaded={handleDataLoaded}
+        onTransactionAdded={handleTransactionAdded}
         loaded={loaded}
-        processed={processed}
-        total={total}
-        hasPending={!!pendingAssessment}
-        onProcessNext={handleProcessNext}
-        onProcessAll={handleProcessAll}
-        processing={processing}
+        totalTransactions={totalTransactions}
       />
 
       <main className="flex-1 overflow-y-auto p-6 space-y-6">
-        <MetricsBar metrics={metrics} />
-
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-gray-800 pb-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition ${activeTab === tab.id
-                  ? "bg-gray-900 text-white border-b-2 border-indigo-500"
-                  : "text-gray-500 hover:text-gray-300"
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab content */}
-        <div className="min-h-[400px]">
-          {activeTab === "feed" && <TransactionFeed transactions={transactions} />}
-          {activeTab === "intercepts" && <InterceptLog />}
-          {activeTab === "insights" && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <CategoryPieChart transactions={transactions} />
-                <TimelineChart transactions={transactions} />
-              </div>
-              {metrics && <ImpulsivityGauge score={metrics.impulsivity_score} />}
+        {!loaded && !pendingAssessment ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4">
+              <div className="text-6xl">💡</div>
+              <h2 className="text-2xl font-bold text-white">Welcome to SpendSense</h2>
+              <p className="text-gray-400 max-w-md">
+                Load your transaction data or add transactions manually to get started.
+                The system will automatically analyze spending patterns and flag risky behavior.
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <MetricsBar metrics={metrics} />
+
+            {/* Tabs */}
+            <div className="flex gap-1 border-b border-gray-800 pb-0">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-4 py-2.5 text-sm font-medium rounded-t-lg transition ${activeTab === tab.id
+                      ? "bg-gray-900 text-white border-b-2 border-indigo-500"
+                      : "text-gray-500 hover:text-gray-300"
+                    }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div className="min-h-[400px]">
+              {activeTab === "feed" && <TransactionFeed transactions={transactions} />}
+              {activeTab === "intercepts" && <InterceptLog />}
+              {activeTab === "insights" && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <CategoryPieChart transactions={transactions} />
+                    <TimelineChart transactions={transactions} />
+                  </div>
+                  {metrics && <ImpulsivityGauge score={metrics.impulsivity_score} />}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
 
-      {/* Intervention modal overlay */}
+      {/* Intervention modal — only for manual transactions */}
       {pendingAssessment && (
         <InterventionModal assessment={pendingAssessment} onDecide={handleDecide} />
       )}
