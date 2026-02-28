@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\backend\src\detectors.py
+# hypothesis_version: 6.148.7
+
+[0.5, 100, 'behavioral', 'budget_drain', 'contextual', 'device_anomaly', 'frequency_burst', 'high', 'late_night_regret', 'location_anomaly', 'medium', 'new', 'new_recipient']

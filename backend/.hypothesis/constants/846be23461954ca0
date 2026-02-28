@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\backend\src\ml_detector.py
+# hypothesis_version: 6.148.7
+
+[0.0, 0.08, 0.95, 470.0, 100, 'amount', 'amount_squared', 'anomaly_score', 'cat', 'category', 'classifier', 'day_of_week', 'dining', 'entertainment', 'hour_of_day', 'ignore', 'is_anomaly', 'is_discretionary', 'is_late_night', 'model_cache.joblib', 'num', 'preprocessor', 'rolling_7d_spend', 'shopping', 'timestamp', 'travel']

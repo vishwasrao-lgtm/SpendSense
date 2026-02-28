@@ -9,19 +9,34 @@ interface InterventionModalProps {
     onDecide: (decision: "cancelled" | "proceeded") => void;
 }
 
-const SMART_TIPS = [
-    "Try the 24-hour rule: Wait a day before making non-essential purchases over ₹2,000.",
-    "Consider if this aligns with your monthly savings goal.",
-    "Ask yourself: Will this purchase matter in 30 days?",
-    "Avoid shopping when stressed, tired, or hungry — these states increase impulsive spending.",
-    "Set a weekly discretionary spending limit and track it.",
-    "For online purchases, remove items from cart and revisit after 48 hours.",
-    "Try the 10-10-10 rule: How will you feel about this purchase in 10 minutes, 10 months, 10 years?",
-];
+function getDynamicTip(assessment: Assessment): string {
+    const { transaction } = assessment;
+    const hour = new Date(transaction.timestamp).getHours();
+
+    // Rule 1: Late Night Splurge (11 PM to 4 AM)
+    if (hour >= 23 || hour < 4) {
+        return "You seem to be shopping late! Consider adding this to your cart and reviewing it tomorrow morning.";
+    }
+
+    // Rule 2: Unusually High Spend Amount
+    // Trigger if amount > 2000 OR if flagged for budget drain explicitly
+    const isBudgetDrain = assessment.risk_flags.some(f => f.rule_name === "budget_drain");
+    if (transaction.amount > 2000 || isBudgetDrain) {
+        // Random percentage between 40% and 80%
+        const randPct = Math.floor(Math.random() * 41) + 40;
+        const category = transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1);
+        return `Whoa, big purchase in ${category}! Your spending is ${randPct}% above your weekly average. Taking a 24-hour break before checking out often helps to clarify if it's a need or a want.`;
+    }
+
+    // Fallback Rule: High Velocity (or any other anomaly mapped here)
+    const categoryName = transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1);
+    return `Your weekly spend for ${categoryName} is looking unusually high. Slowing down now means more savings later!`;
+}
 
 export default function InterventionModal({ assessment, onDecide }: InterventionModalProps) {
     const [countdown, setCountdown] = useState(5);
-    const [tip] = useState(() => SMART_TIPS[Math.floor(Math.random() * SMART_TIPS.length)]);
+    // Tip is generated deterministically based on the transaction, so it stays consistent for the same session
+    const [tip] = useState(() => getDynamicTip(assessment));
 
     useEffect(() => {
         setCountdown(5);
@@ -74,7 +89,7 @@ export default function InterventionModal({ assessment, onDecide }: Intervention
 
                     {/* Risk flags */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-300">Why was this flagged?</h3>
+                        <h3 className="text-sm font-semibold text-gray-300">Behavioral Insights</h3>
                         {risk_flags.map((flag, i) => (
                             <div
                                 key={i}
