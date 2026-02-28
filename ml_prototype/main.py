@@ -1,5 +1,5 @@
 import pandas as pd
-from data_generator import generate_normal_transactions, inject_impulsive_behavior
+
 from ml_model import BehavioralAnomalyDetector
 from intervention import InterventionEngine
 import os
@@ -47,7 +47,7 @@ def run_demo():
     for i, (_, row) in enumerate(top_anomalies.iterrows(), 1):
         print(f"\n[{i}] Alert - {row['timestamp'].strftime('%Y-%m-%d %H:%M')}")
         print(f"    Category:   {row['category']}")
-        print(f"    Amount:     ${row['amount']:.2f}")
+        print(f"    Amount:     ₹{row['amount']:.2f}")
         
         # Prepare context for the engine
         context = {
