@@ -1,0 +1,24 @@
+# Environments
+.env
+.venv
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest and Hypothesis
+.pytest_cache/
+.hypothesis/
+test_output.txt
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+.DS_Store
