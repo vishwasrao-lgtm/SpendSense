@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { ShieldAlert, Clock, X, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ShieldAlert, Clock, X, ChevronRight, TrendingUp, Lightbulb } from "lucide-react";
 import type { Assessment } from "@/lib/api";
 
 interface InterventionModalProps {
@@ -9,11 +9,22 @@ interface InterventionModalProps {
     onDecide: (decision: "cancelled" | "proceeded") => void;
 }
 
+const SMART_TIPS = [
+    "Try the 24-hour rule: Wait a day before making non-essential purchases over ₹2,000.",
+    "Consider if this aligns with your monthly savings goal.",
+    "Ask yourself: Will this purchase matter in 30 days?",
+    "Avoid shopping when stressed, tired, or hungry — these states increase impulsive spending.",
+    "Set a weekly discretionary spending limit and track it.",
+    "For online purchases, remove items from cart and revisit after 48 hours.",
+    "Try the 10-10-10 rule: How will you feel about this purchase in 10 minutes, 10 months, 10 years?",
+];
+
 export default function InterventionModal({ assessment, onDecide }: InterventionModalProps) {
-    const [countdown, setCountdown] = useState(10);
+    const [countdown, setCountdown] = useState(5);
+    const [tip] = useState(() => SMART_TIPS[Math.floor(Math.random() * SMART_TIPS.length)]);
 
     useEffect(() => {
-        setCountdown(10);
+        setCountdown(5);
         const timer = setInterval(() => {
             setCountdown((prev) => {
                 if (prev <= 1) {
@@ -26,12 +37,14 @@ export default function InterventionModal({ assessment, onDecide }: Intervention
         return () => clearInterval(timer);
     }, [assessment.transaction.txn_id]);
 
-    const { transaction, risk_flags, future_impact } = assessment;
+    const { transaction, risk_flags } = assessment;
     const severityColors: Record<string, string> = {
         high: "bg-red-900/40 border-red-700 text-red-300",
         medium: "bg-amber-900/40 border-amber-700 text-amber-300",
         low: "bg-blue-900/40 border-blue-700 text-blue-300",
     };
+
+    const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     return (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -47,15 +60,11 @@ export default function InterventionModal({ assessment, onDecide }: Intervention
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-800 rounded-xl p-4 text-center">
                             <p className="text-xs text-gray-400 mb-1">Transaction Amount</p>
-                            <p className="text-2xl font-bold text-white">
-                                ${transaction.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                            </p>
+                            <p className="text-2xl font-bold text-white">₹{fmt(transaction.amount)}</p>
                         </div>
                         <div className="bg-gray-800 rounded-xl p-4 text-center">
                             <p className="text-xs text-gray-400 mb-1">Budget Remaining</p>
-                            <p className="text-2xl font-bold text-white">
-                                ${transaction.monthly_budget_remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                            </p>
+                            <p className="text-2xl font-bold text-white">₹{fmt(transaction.monthly_budget_remaining)}</p>
                         </div>
                     </div>
 
@@ -80,18 +89,12 @@ export default function InterventionModal({ assessment, onDecide }: Intervention
                         ))}
                     </div>
 
-                    {/* Future impact */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-300 mb-2">Future Impact (if invested)</h3>
-                        <div className="grid grid-cols-3 gap-2">
-                            {Object.entries(future_impact).map(([label, value]) => (
-                                <div key={label} className="bg-emerald-900/20 border border-emerald-800/50 rounded-lg p-3 text-center">
-                                    <p className="text-xs text-emerald-400/70">{label}</p>
-                                    <p className="text-sm font-bold text-emerald-400">
-                                        ${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                    </p>
-                                </div>
-                            ))}
+                    {/* Smart Tip (replaces Future Impact) */}
+                    <div className="bg-indigo-900/20 border border-indigo-800/50 rounded-xl p-4 flex gap-3">
+                        <Lightbulb size={20} className="text-indigo-400 shrink-0 mt-0.5" />
+                        <div>
+                            <h3 className="text-sm font-semibold text-indigo-300 mb-1">Smart Spending Tip</h3>
+                            <p className="text-sm text-indigo-200/80">{tip}</p>
                         </div>
                     </div>
 

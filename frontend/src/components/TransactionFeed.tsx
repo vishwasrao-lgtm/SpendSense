@@ -19,37 +19,44 @@ export default function TransactionFeed({ transactions }: TransactionFeedProps) 
         (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
+    const fmt = (n: number) =>
+        n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
     return (
         <div className="space-y-1">
-            <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-4 py-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
-                <span>Status</span>
+            {/* Header */}
+            <div className="grid grid-cols-[40px_1fr_120px_100px_140px] gap-3 px-4 py-2 text-xs text-gray-500 font-medium uppercase tracking-wider">
+                <span></span>
                 <span>Details</span>
                 <span className="text-right">Amount</span>
-                <span>Time</span>
-                <span>ID</span>
+                <span className="text-right">Time</span>
+                <span className="text-right">ID</span>
             </div>
-            <div className="max-h-[400px] overflow-y-auto space-y-1 pr-1">
+            {/* Rows */}
+            <div className="max-h-[450px] overflow-y-auto space-y-1 pr-1">
                 {sorted.map((txn) => {
                     const style = getStyle(txn);
                     return (
                         <div
                             key={txn.txn_id}
-                            className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-4 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition items-center"
+                            className="grid grid-cols-[40px_1fr_120px_100px_140px] gap-3 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition items-center"
                         >
-                            <span className="text-lg">{style.icon}</span>
-                            <div>
+                            <span className="text-lg text-center">{style.icon}</span>
+                            <div className="min-w-0">
                                 <span className="text-sm font-medium text-white">
                                     {txn.category.charAt(0).toUpperCase() + txn.category.slice(1)}
                                 </span>
                                 <span className="text-xs text-gray-500 ml-2">{txn.recipient_status}</span>
                             </div>
-                            <span className={`text-sm font-semibold text-right ${style.amountColor}`}>
-                                ${txn.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            <span className={`text-sm font-semibold text-right tabular-nums ${style.amountColor}`}>
+                                ₹{fmt(txn.amount)}
                             </span>
-                            <span className="text-xs text-gray-400 font-mono">
-                                {new Date(txn.timestamp).toLocaleTimeString()}
+                            <span className="text-xs text-gray-400 font-mono text-right">
+                                {new Date(txn.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                             </span>
-                            <span className="text-xs text-gray-600 font-mono">{txn.txn_id}</span>
+                            <span className="text-xs text-gray-600 font-mono text-right truncate" title={txn.txn_id}>
+                                {txn.txn_id}
+                            </span>
                         </div>
                     );
                 })}

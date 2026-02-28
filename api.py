@@ -94,8 +94,9 @@ def _auto_process_all():
     for txn in all_transactions:
         assessment = risk_engine.evaluate_transaction(txn)
         risk_engine.add_transaction(txn)
-        # Auto-process: just record that it was flagged but no decision needed
-        # Flagged status is already set on the transaction by evaluate_transaction
+        # Auto-processed flagged transactions: record as "proceeded" in intercept log
+        if assessment.is_flagged:
+            risk_engine.record_decision(txn, assessment, "proceeded")
 
 
 @app.route("/api/load-sample", methods=["POST"])
@@ -176,10 +177,19 @@ def add_transaction():
         return jsonify({"error": "Amount must be positive"}), 400
 
     from src.models import Transaction
+
+    # Parse optional timestamp
+    ts = datetime.now()
+    if data.get("timestamp"):
+        try:
+            ts = datetime.fromisoformat(str(data["timestamp"]))
+        except (ValueError, TypeError):
+            pass
+
     txn = Transaction(
         txn_id=f"MANUAL_{len(all_transactions) + 1:05d}",
         user_id=data.get("user_id", "USR_MANUAL"),
-        timestamp=datetime.now(),
+        timestamp=ts,
         amount=amount,
         category=category,
         recipient_status=data.get("recipient_status", "new"),

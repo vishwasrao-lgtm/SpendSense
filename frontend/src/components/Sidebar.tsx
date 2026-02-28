@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, Database, Plus, Loader2, DollarSign } from "lucide-react";
+import { Upload, Database, Plus, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 
 const CATEGORIES = ["groceries", "dining", "entertainment", "shopping", "bills", "travel", "utilities", "health", "food"];
@@ -28,6 +28,10 @@ export default function Sidebar({
     const [showForm, setShowForm] = useState(false);
     const [amount, setAmount] = useState("");
     const [category, setCategory] = useState("shopping");
+    const [timestamp, setTimestamp] = useState(() => {
+        const now = new Date();
+        return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    });
 
     const handleLoadSample = async () => {
         setLoading(true);
@@ -73,8 +77,11 @@ export default function Sidebar({
             const result = await api.addTransaction({
                 amount: parseFloat(amount),
                 category,
+                timestamp,
             });
             setAmount("");
+            // Reset timestamp to now
+            setTimestamp(new Date().toISOString().slice(0, 16));
             onTransactionAdded(result);
             if (result.status === "clean") {
                 setSuccess("Transaction added — no risk detected");
@@ -153,9 +160,9 @@ export default function Sidebar({
                 {showForm && (
                     <div className="bg-gray-800/50 rounded-lg p-4 space-y-3 border border-gray-700">
                         <div>
-                            <label className="text-xs text-gray-400 block mb-1">Amount ($)</label>
+                            <label className="text-xs text-gray-400 block mb-1">Amount (₹)</label>
                             <div className="relative">
-                                <DollarSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₹</span>
                                 <input
                                     type="number"
                                     step="0.01"
@@ -163,7 +170,7 @@ export default function Sidebar({
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 pl-7 pr-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
                                 />
                             </div>
                         </div>
@@ -180,6 +187,15 @@ export default function Sidebar({
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                        <div>
+                            <label className="text-xs text-gray-400 block mb-1">Date & Time</label>
+                            <input
+                                type="datetime-local"
+                                value={timestamp}
+                                onChange={(e) => setTimestamp(e.target.value)}
+                                className="w-full bg-gray-900 border border-gray-700 rounded-lg py-2 px-3 text-white text-sm focus:border-indigo-500 focus:outline-none"
+                            />
                         </div>
                         <button
                             onClick={handleAddTransaction}

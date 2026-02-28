@@ -31,8 +31,8 @@ export default function InterceptLog() {
                             key={f}
                             onClick={() => setFilter(f)}
                             className={`px-3 py-1 rounded-md text-xs font-medium transition ${filter === f
-                                    ? "bg-indigo-600 text-white"
-                                    : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                                ? "bg-indigo-600 text-white"
+                                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
                                 }`}
                         >
                             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -58,12 +58,12 @@ export default function InterceptLog() {
                                         {entry.txn_id}
                                     </span>
                                     <span className="text-sm font-semibold text-gray-300">
-                                        ${entry.transaction.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                                        ₹{entry.transaction.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                                     </span>
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${isCancelled
-                                                ? "bg-red-900/40 text-red-400"
-                                                : "bg-amber-900/40 text-amber-400"
+                                            ? "bg-red-900/40 text-red-400"
+                                            : "bg-amber-900/40 text-amber-400"
                                             }`}
                                     >
                                         {entry.user_decision}

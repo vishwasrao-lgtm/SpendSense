@@ -23,7 +23,7 @@ export default function MetricsBar({ metrics }: MetricsBarProps) {
             {cards.map((card) => {
                 const value = metrics[card.key as keyof Metrics];
                 let display: string;
-                if ("isCurrency" in card && card.isCurrency) display = `$${(value as number).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                if ("isCurrency" in card && card.isCurrency) display = `₹${(value as number).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 else if ("isPercent" in card && card.isPercent) display = `${(value as number).toFixed(1)}%`;
                 else if ("isScore" in card && card.isScore) display = `${Math.round(value as number)}/100`;
                 else display = String(value);

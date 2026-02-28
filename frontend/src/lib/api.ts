@@ -74,7 +74,7 @@ export const api = {
     return fetchJSON(`${API_BASE}/load`, { method: "POST", body: fd });
   },
 
-  addTransaction: (data: { amount: number; category: string; recipient_status?: string }) =>
+  addTransaction: (data: { amount: number; category: string; recipient_status?: string; timestamp?: string }) =>
     fetchJSON(`${API_BASE}/add-transaction`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
