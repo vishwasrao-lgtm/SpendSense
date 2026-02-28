@@ -9,34 +9,29 @@ def run_demo():
     print(" Behavioral Intervention System for Financial Decisions ".center(60))
     print("=" * 60)
     
-    # 1. Generate Data
-    dataset_path = 'impulsive_spending_dataset.csv'
-    if not os.path.exists(dataset_path):
-        print(f"\n[1] Generating synthetic financial data to {dataset_path}...")
-        df = generate_normal_transactions(num_days=60)
-        df = inject_impulsive_behavior(df, num_events=12)
-        df.to_csv(dataset_path, index=False)
-        print(f"    Created dataset with {len(df)} transactions.")
-    else:
-        print(f"\n[1] Loading existing financial data from {dataset_path}...")
-        df = pd.read_csv(dataset_path)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-        print(f"    Loaded dataset with {len(df)} transactions.")
-
-    # 2. Train or Load Model
-    print("\n[2] Loading/Training Behavioral Anomaly Detection Model...")
-    detector = BehavioralAnomalyDetector(contamination=0.08)
+    # 1. Load Data
+    train_dataset_path = 'impulsive_spending_dataset.csv'
+    test_dataset_path = 'impulsive_spending_dataset_testcase.csv'
     
-    if detector.load():
-        print("    Using cached model instance.")
-    else:
-        print("    Training new model instance...")
-        detector.train(df)
+    print(f"\n[1] Loading training financial data from {train_dataset_path}...")
+    df_train = pd.read_csv(train_dataset_path)
+    df_train['timestamp'] = pd.to_datetime(df_train['timestamp'])
+    print(f"    Loaded training dataset with {len(df_train)} transactions.")
+    
+    print(f"\n    Loading testing financial data from {test_dataset_path}...")
+    df_test = pd.read_csv(test_dataset_path)
+    df_test['timestamp'] = pd.to_datetime(df_test['timestamp'])
+    print(f"    Loaded testing dataset with {len(df_test)} transactions.")
+
+    # 2. Train Model
+    print("\n[2] Training Behavioral Anomaly Detection Model on training data...")
+    detector = BehavioralAnomalyDetector(contamination=0.08)
+    detector.train(df_train)
     
     # 3. Predict & Generate Interventions
-    print("\n[3] Scoring Transactions & Generating Interventions...")
-    # For demo purposes, we rescore the entire dataset. In reality, this would be new streaming data.
-    scored_data = detector.predict(df)
+    print("\n[3] Scoring Transactions & Generating Interventions on test data...")
+    # Predict anomalies on the separate test set
+    scored_data = detector.predict(df_test)
     
     anomalies = scored_data[scored_data['is_anomaly'] == 1].copy()
     print(f"    Detected {len(anomalies)} anomalous spending patterns.")
