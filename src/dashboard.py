@@ -77,7 +77,7 @@ class Dashboard:
                 with cols[1]:
                     st.markdown(f"**{txn.category.title()}** — {txn.recipient_status}")
                 with cols[2]:
-                    st.markdown(f"**${txn.amount:,.2f}**")
+                    st.markdown(f"**\${txn.amount:,.2f}**")
                 with cols[3]:
                     st.markdown(txn.timestamp.strftime("%H:%M:%S"))
                 with cols[4]:
@@ -113,7 +113,7 @@ class Dashboard:
         for entry in reversed(filtered):  # most recent first
             decision_icon = "❌" if entry.user_decision == "cancelled" else "⚠️"
             with st.expander(
-                f"{decision_icon} {entry.txn_id} — ${entry.transaction.amount:,.2f} "
+                f"{decision_icon} {entry.txn_id} — \${entry.transaction.amount:,.2f} "
                 f"({entry.user_decision.title()})"
             ):
                 st.markdown(f"**Timestamp:** {entry.decision_timestamp.strftime('%Y-%m-%d %H:%M:%S')}")

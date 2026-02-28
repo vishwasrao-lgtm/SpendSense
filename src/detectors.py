@@ -39,8 +39,8 @@ class BehavioralDetector:
             return RiskFlag(
                 rule_name="budget_drain",
                 explanation=(
-                    f"This ${transaction.amount:.2f} purchase will push you further "
-                    f"over budget (remaining: ${transaction.monthly_budget_remaining:.2f})."
+                    f"This \\${transaction.amount:.2f} purchase will push you further "
+                    f"over budget (remaining: \\${transaction.monthly_budget_remaining:.2f})."
                 ),
                 severity="high",
                 detector_type="behavioral",
@@ -51,8 +51,8 @@ class BehavioralDetector:
             return RiskFlag(
                 rule_name="budget_drain",
                 explanation=(
-                    f"This ${transaction.amount:.2f} purchase uses {pct:.0f}% of your "
-                    f"remaining monthly budget (${transaction.monthly_budget_remaining:.2f})."
+                    f"This \\${transaction.amount:.2f} purchase uses {pct:.0f}% of your "
+                    f"remaining monthly budget (\\${transaction.monthly_budget_remaining:.2f})."
                 ),
                 severity="high",
                 detector_type="behavioral",

@@ -213,9 +213,9 @@ class DataLoader:
                 filled["recipient_status"] = "existing"
 
         if "monthly_budget_remaining" not in filled or DataLoader._is_empty(filled.get("monthly_budget_remaining")):
-            # Default: $2000 minus running total (simple estimate)
+            # Default: 5x the transaction amount so it stays under the 50% flag threshold
             try:
-                filled["monthly_budget_remaining"] = max(0, 2000.0 - float(filled.get("amount", 0)))
+                filled["monthly_budget_remaining"] = max(2000.0, float(filled.get("amount", 0)) * 5)
             except (ValueError, TypeError):
                 filled["monthly_budget_remaining"] = 2000.0
 
