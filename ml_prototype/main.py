@@ -10,8 +10,8 @@ def run_demo():
     print("=" * 60)
     
     # 1. Load Data
-    train_dataset_path = 'impulsive_spending_dataset.csv'
-    test_dataset_path = 'impulsive_spending_dataset_testcase.csv'
+    train_dataset_path = 'training50k.csv'
+    test_dataset_path = 'testcase10k.csv'
     
     print(f"\n[1] Loading training financial data from {train_dataset_path}...")
     df_train = pd.read_csv(train_dataset_path)

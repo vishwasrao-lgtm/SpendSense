@@ -10,9 +10,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # =====================================================================
 # EDIT THESE 3 VARIABLES TO TEST YOUR TRANSACTION
 # =====================================================================
-TIMESTAMP_TO_TEST = "2026-03-01 02:45:00"  
-CATEGORY_TO_TEST  = "Entertainment"        
-AMOUNT_TO_TEST    = 5500.00                
+TIMESTAMP_TO_TEST = "2026-03-01 02:45:00"
+CATEGORY_TO_TEST  = "Entertainment"
+AMOUNT_TO_TEST    = 5500.00
 # =====================================================================
 
 print("\n" + "=" * 50)
