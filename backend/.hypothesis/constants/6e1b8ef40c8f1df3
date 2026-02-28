@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\backend\src\risk_engine.py
+# hypothesis_version: 6.148.7
+
+[0.0, 0.4, 0.6, 100.0, 100, 'anomaly_score', 'behavioral_model', 'cancelled', 'high', 'is_anomaly', 'proceeded', 'txn_id', 'unusual_pattern']

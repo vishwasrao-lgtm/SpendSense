@@ -89,7 +89,7 @@ export default function InterventionModal({ assessment, onDecide }: Intervention
 
                     {/* Risk flags */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-300">Why was this flagged?</h3>
+                        <h3 className="text-sm font-semibold text-gray-300">Behavioral Insights</h3>
                         {risk_flags.map((flag, i) => (
                             <div
                                 key={i}

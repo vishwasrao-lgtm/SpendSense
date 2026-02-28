@@ -197,9 +197,13 @@ def add_transaction():
         channel="web",
     )
 
+    all_transactions.append(txn)
+    
+    # Re-evaluate all transactions to ensure rolling averages and ML batch predictions are updated
+    risk_engine.train_ml_model(all_transactions)
+
     assessment = risk_engine.evaluate_transaction(txn)
     risk_engine.add_transaction(txn)
-    all_transactions.append(txn)
 
     if assessment.is_flagged:
         pending_assessment = assessment

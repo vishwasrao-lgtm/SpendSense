@@ -1,0 +1,4 @@
+# file: C:\Users\bharg\Documents\HackSprint\SpendSense\backend\src\models.py
+# hypothesis_version: 6.148.7
+
+[0.0, 'amount', 'bills', 'category', 'channel', 'device_id', 'dining', 'education', 'entertainment', 'groceries', 'health', 'location', 'mobile_app', 'other', 'pos', 'recipient_status', 'shopping', 'timestamp', 'travel', 'txn_id', 'user_id', 'utilities', 'web']

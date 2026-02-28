@@ -4,9 +4,11 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Optional
 
+import pandas as pd
+from dataclasses import asdict
 from src.detectors import BehavioralDetector, ContextualDetector
 from src.ml_detector import MLAnomalyDetector
-from src.models import InterceptLog, RiskAssessment, Transaction
+from src.models import InterceptLog, RiskAssessment, Transaction, RiskFlag
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,9 @@ class RiskEngine:
         self.transactions: List[Transaction] = []
         self.intercept_log: List[InterceptLog] = []
         self.money_saved: float = 0.0
+        
+        # Cache for ML predictions keyed by txn_id
+        self.ml_predictions = {}
 
     # ------------------------------------------------------------------
     # Core API
@@ -45,8 +50,8 @@ class RiskEngine:
         )
         contextual_flags = self.contextual_detector.detect(transaction, recent)
 
-        # ML anomaly check
-        ml_flag = self.ml_detector.detect(transaction)
+        # ML anomaly check (retrieved from batch-predicted cache)
+        ml_flag = self.ml_predictions.get(transaction.txn_id)
 
         all_flags = behavioral_flags + contextual_flags
         if ml_flag:
@@ -101,7 +106,27 @@ class RiskEngine:
 
     def train_ml_model(self, transactions: List[Transaction]) -> None:
         """Train the ML detector using the provided historical transactions."""
-        self.ml_detector.fit(transactions)
+        if not transactions:
+            return
+            
+        df = pd.DataFrame([asdict(t) for t in transactions])
+        self.ml_detector.fit(df)
+        
+        # Immediately batch-predict and cache the results
+        df_scored = self.ml_detector.predict_batch(df)
+        
+        for _, row in df_scored.iterrows():
+            if row.get('is_anomaly') == 1:
+                score = row.get('anomaly_score', 0.0)
+                flag = RiskFlag(
+                    rule_name="unusual_pattern",
+                    explanation="This purchase significantly deviates from your established spending habits.",
+                    severity="high",
+                    detector_type="behavioral_model"
+                )
+                self.ml_predictions[row['txn_id']] = flag
+            else:
+                self.ml_predictions[row['txn_id']] = None
 
     def add_transaction(self, transaction: Transaction) -> None:
         """Store a transaction in the in-memory list."""
