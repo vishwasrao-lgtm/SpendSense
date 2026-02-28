@@ -5,10 +5,13 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from datetime import datetime
+import joblib
+import os
 
 class BehavioralAnomalyDetector:
-    def __init__(self, contamination=0.05):
+    def __init__(self, contamination=0.05, model_path="model_cache.joblib"):
         self.contamination = contamination
+        self.model_path = model_path
         self.model = None
         self.preprocessor = None
         
@@ -70,6 +73,7 @@ class BehavioralAnomalyDetector:
         # Train model
         X = df_featured[numeric_features + categorical_features]
         self.model.fit(X)
+        self.save()
         print("Model trained successfully.")
         return self
         
@@ -98,6 +102,21 @@ class BehavioralAnomalyDetector:
         df_featured['anomaly_score'] = scores
         
         return df_featured
+        
+    def save(self):
+        """Saves the trained model to disk."""
+        if self.model is None:
+            raise Exception("No model to save!")
+        joblib.dump(self.model, self.model_path)
+        print(f"Model saved to {self.model_path}")
+        
+    def load(self):
+        """Loads a trained model from disk if it exists."""
+        if os.path.exists(self.model_path):
+            self.model = joblib.load(self.model_path)
+            print(f"Model loaded from {self.model_path}")
+            return True
+        return False
 
 if __name__ == "__main__":
     # Test model locally

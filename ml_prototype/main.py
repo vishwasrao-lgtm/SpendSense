@@ -22,10 +22,15 @@ def run_demo():
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         print(f"    Loaded dataset with {len(df)} transactions.")
 
-    # 2. Train Model
-    print("\n[2] Training Behavioral Anomaly Detection Model...")
+    # 2. Train or Load Model
+    print("\n[2] Loading/Training Behavioral Anomaly Detection Model...")
     detector = BehavioralAnomalyDetector(contamination=0.08)
-    detector.train(df)
+    
+    if detector.load():
+        print("    Using cached model instance.")
+    else:
+        print("    Training new model instance...")
+        detector.train(df)
     
     # 3. Predict & Generate Interventions
     print("\n[3] Scoring Transactions & Generating Interventions...")
