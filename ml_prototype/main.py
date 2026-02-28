@@ -10,15 +10,16 @@ def run_demo():
     print("=" * 60)
     
     # 1. Generate Data
-    if not os.path.exists('synthetic_transactions.csv'):
-        print("\n[1] Generating synthetic financial data...")
+    dataset_path = 'impulsive_spending_dataset.csv'
+    if not os.path.exists(dataset_path):
+        print(f"\n[1] Generating synthetic financial data to {dataset_path}...")
         df = generate_normal_transactions(num_days=60)
         df = inject_impulsive_behavior(df, num_events=12)
-        df.to_csv('synthetic_transactions.csv', index=False)
+        df.to_csv(dataset_path, index=False)
         print(f"    Created dataset with {len(df)} transactions.")
     else:
-        print("\n[1] Loading existing synthetic financial data...")
-        df = pd.read_csv('synthetic_transactions.csv')
+        print(f"\n[1] Loading existing financial data from {dataset_path}...")
+        df = pd.read_csv(dataset_path)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         print(f"    Loaded dataset with {len(df)} transactions.")
 

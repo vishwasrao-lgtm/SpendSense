@@ -30,7 +30,7 @@ class BehavioralAnomalyDetector:
         df['is_late_night'] = df['hour_of_day'].apply(lambda x: 1 if (x >= 23 or x <= 4) else 0)
         
         # Target specific discretionary categories
-        discretionary_categories = ['Electronics', 'Clothing', 'Entertainment']
+        discretionary_categories = ['Shopping', 'Entertainment', 'Travel']
         df['is_discretionary'] = df['category'].apply(lambda x: 1 if x in discretionary_categories else 0)
         
         # Rolling 7-day spend per category (simulated budget depletion)
