@@ -40,6 +40,9 @@ class BehavioralAnomalyDetector:
             lambda x: x.rolling(7, min_periods=1).sum()
         )
         
+        # FEATURE ENGINEERING: Square the amount to make high purchases stand out more
+        df['amount_squared'] = df['amount'] ** 2
+        
         return df
         
     def train(self, df):
@@ -47,7 +50,7 @@ class BehavioralAnomalyDetector:
         df_featured = self._engineer_features(df)
         
         # Define features for the model
-        numeric_features = ['amount', 'hour_of_day', 'is_late_night', 'is_discretionary', 'rolling_7d_spend']
+        numeric_features = ['amount', 'amount_squared', 'hour_of_day', 'is_late_night', 'is_discretionary', 'rolling_7d_spend']
         categorical_features = ['category', 'day_of_week']
         
         # Create preprocessing pipeline
@@ -83,7 +86,7 @@ class BehavioralAnomalyDetector:
             raise Exception("Model is not trained yet!")
             
         df_featured = self._engineer_features(new_transactions_df)
-        numeric_features = ['amount', 'hour_of_day', 'is_late_night', 'is_discretionary', 'rolling_7d_spend']
+        numeric_features = ['amount', 'amount_squared', 'hour_of_day', 'is_late_night', 'is_discretionary', 'rolling_7d_spend']
         categorical_features = ['category', 'day_of_week']
         
         X = df_featured[numeric_features + categorical_features]
@@ -98,7 +101,16 @@ class BehavioralAnomalyDetector:
         # We invert it so higher score = more anomalous
         scores = -self.model.decision_function(X) 
         
-        df_featured['is_anomaly'] = predictions
+        # APPLY RULE-BASED OVERRIDE
+        # The Isolation Forest is unsupervised and can miss standard definitions of impulsive spending.
+        # We override based on our data insights:
+        # If it's a Discretionary Category AND (it's Late Night OR Very High Amount (>₹470)) -> Flag as Impulsive
+        heuristic_impulsive = (df_featured['is_discretionary'] == 1) & ((df_featured['is_late_night'] == 1) | (df_featured['amount'] > 470))
+        
+        # Combine ML prediction and heuristic prediction using OR
+        combined_predictions = np.where(heuristic_impulsive | (predictions == 1), 1, 0)
+        
+        df_featured['is_anomaly'] = combined_predictions
         df_featured['anomaly_score'] = scores
         
         return df_featured
