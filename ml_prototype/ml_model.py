@@ -14,6 +14,8 @@ class BehavioralAnomalyDetector:
         self.model_path = model_path
         self.model = None
         self.preprocessor = None
+        self.high_spend_threshold = 470.0
+        self.impulsive_hours = [0, 1, 2, 3, 4, 5, 6]
         
     def _engineer_features(self, df):
         """Creates new features based on transaction timestamps and behavior."""
@@ -26,8 +28,8 @@ class BehavioralAnomalyDetector:
         df['hour_of_day'] = df['timestamp'].dt.hour
         df['day_of_week'] = df['timestamp'].dt.dayofweek
         
-        # Late night flag (11 PM to 4 AM)
-        df['is_late_night'] = df['hour_of_day'].apply(lambda x: 1 if (x >= 23 or x <= 4) else 0)
+        # Late night / high impulse hour flag (dynamically learned during train)
+        df['is_late_night'] = df['hour_of_day'].apply(lambda x: 1 if x in self.impulsive_hours else 0)
         
         # Target specific discretionary categories
         discretionary_categories = ['Shopping', 'Entertainment', 'Travel']
@@ -46,7 +48,22 @@ class BehavioralAnomalyDetector:
         return df
         
     def train(self, df):
-        """Trains the Isolation Forest model on regular user behavior."""
+        """Trains the Isolation Forest model and calculates dynamic rule thresholds."""
+        # DYNAMIC THRESHOLD CALCULATION
+        df_temp = df.copy()
+        if not pd.api.types.is_datetime64_any_dtype(df_temp['timestamp']):
+            df_temp['timestamp'] = pd.to_datetime(df_temp['timestamp'])
+        df_temp['hour_of_day'] = df_temp['timestamp'].dt.hour
+            
+        if 'is_impulsive' in df_temp.columns:
+            impulsive_df = df_temp[df_temp['is_impulsive'] == 1]
+            self.high_spend_threshold = impulsive_df['amount'].quantile(0.75)
+            # Find the top 6 hours with the most impulsive behavior
+            self.impulsive_hours = impulsive_df['hour_of_day'].value_counts().head(6).index.tolist()
+        else:
+            self.high_spend_threshold = df_temp['amount'].quantile(0.95)
+            self.impulsive_hours = [23, 0, 1, 2, 3, 4]
+            
         df_featured = self._engineer_features(df)
         
         # Define features for the model
@@ -104,8 +121,8 @@ class BehavioralAnomalyDetector:
         # APPLY RULE-BASED OVERRIDE
         # The Isolation Forest is unsupervised and can miss standard definitions of impulsive spending.
         # We override based on our data insights:
-        # If it's a Discretionary Category AND (it's Late Night OR Very High Amount (>₹470)) -> Flag as Impulsive
-        heuristic_impulsive = (df_featured['is_discretionary'] == 1) & ((df_featured['is_late_night'] == 1) | (df_featured['amount'] > 470))
+        # If it's a Discretionary Category AND (it's Late Night OR Very High Amount (> dynamic threshold)) -> Flag as Impulsive
+        heuristic_impulsive = (df_featured['is_discretionary'] == 1) & ((df_featured['is_late_night'] == 1) | (df_featured['amount'] > self.high_spend_threshold))
         
         # Combine ML prediction and heuristic prediction using OR
         combined_predictions = np.where(heuristic_impulsive | (predictions == 1), 1, 0)

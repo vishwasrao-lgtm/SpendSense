@@ -71,7 +71,8 @@ def run_demo():
             'category': row['category'],
             'amount': row['amount'],
             'is_late_night': row['is_late_night'],
-            'is_anomaly': row['is_anomaly']
+            'is_anomaly': row['is_anomaly'],
+            'high_spend_threshold': detector.high_spend_threshold
         }
         
         intervention_msg = engine.generate_intervention(context)

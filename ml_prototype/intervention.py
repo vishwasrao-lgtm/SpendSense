@@ -42,8 +42,9 @@ class InterventionEngine:
             messages.append(random.choice(msgs))
             
         # Rule 2: High Spend Amount 
-        # (Based on the 75th percentile of impulsive spends in the training 50k dataset, which is ₹470)
-        if amount > 470:
+        # (Dynamic threshold provided by the ML model context)
+        high_spend_threshold = transaction.get('high_spend_threshold', 470)
+        if amount > high_spend_threshold:
             msg = random.choice(self.high_spend_messages).format(category=category, percent=random.randint(40, 80))
             messages.append(msg)
             

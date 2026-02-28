@@ -57,7 +57,8 @@ if is_anomaly:
         'category': result['category'],
         'amount': result['amount'],
         'is_late_night': result['is_late_night'],
-        'is_anomaly': result['is_anomaly']
+        'is_anomaly': result['is_anomaly'],
+        'high_spend_threshold': detector.high_spend_threshold
     })
     print("\n[Intervention Triggered]")
     print(f"---> {msg}")
